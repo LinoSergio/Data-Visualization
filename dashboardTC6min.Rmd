@@ -1,0 +1,195 @@
+---
+title: "TC6min Brazil dashboard"
+author: "Lino Sergio Rocha, PhD"
+date: "`r Sys.Date()`"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+pacman::p_load(
+  rio,             
+  here,            
+  tidyverse,
+  ggstatsplot,
+  flexdashboard,   
+  plotly,
+  janitor,
+  DT,
+  meta,
+  leaflet,
+  geobr,
+  sf)
+
+options(digits = 1)
+```
+
+
+# Overview 
+
+## Introduction {data-width=300}
+
+**Introduction**
+
+The six-minute walk test (6MWT) is a functional test conceptually performed in a submaximal effort, which has been proposed to reflect activities of daily living[1]. Since the development of the 6MWT in the early 1970s. this test is growing its importance in clinical practice and research. The 6MWT is growing its importance in clinical practice and in scientific context because it is of easy implementation, low cost and the maximal walked distance represents high prognostic value in several cardiopulmonary disorders. his test is also widely used to assess exercise capacity before and after an intervention, such as an exercise-training program. Briefly, patients are instructed to walk both ways for six minutes on a corridor around 30 meters, which is delimited by two cones. The maximum walked distance is the main outcome in the 6MWT. 
+
+Considering the worldwide interest in the 6MWT, many countries already have established reference values for their children/adolescents. Moreover, it is not uncommon that clinicians and researchers from a country use a foreign reference value for the 6MWT. In this context, reference values are crucial to a correct interpretation of the test in clinical practice and scientific field.
+
+This dashboard summarize the initial data from the TC6min Brazil. This study aims to establish the reference values for the 6MWT in Brazil.  
+
+```{r}
+df <- import(here("TC6min (1).xlsx"))
+cities_lat_long <- read_csv("municipios.csv")
+
+dfmap <- df %>% 
+  mutate(Centro = recode(Centro,"Bahia" = "Salvador","Belo_Horizonte" = "Belo Horizonte", 
+                         "Goiás" = "Goiás", 
+                         "Mackenzie" = "São Paulo", 
+                         "Manaus" = "Manaus", 
+                         "Piauí" = "Piauí",
+                         "Rio_Grande_do_Sul"  = "Porto Alegre",
+                         "Santa_Catarina"  = "Florianópolis", 
+                         "São_Judas"  = "Sao Judas", 
+                         "Sergipe" = "Aracaju", 
+                         "Uberlândia" = "Uberlândia"))
+
+df_final <- left_join(dfmap, cities_lat_long, by = c("Centro" = "nome"))
+
+```
+
+```{r}
+map_TC62 <- leaflet(df_final, width = 600) %>% addTiles() %>% 
+  addMarkers(
+    lat = df_final$latitude,
+    lng = df_final$longitude,
+    popup = paste0("<b>City: </b>", df_final$Centro,"<br>",
+                   "<b>Distance: </b>", df_final$Distancia),
+    label = ~Centro)
+
+map_TC62
+```
+
+
+# Data Visualization
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Dataset of Six-minute walk test in Brazil (TC6min)
+
+```{r}
+
+df1 <- df %>% 
+  mutate(Centro = recode(Centro,"Bahia" = "Bahia","Belo_Horizonte" = "Belo Horizonte", 
+                              "Goiás" = "Goias", 
+                              "Mackenzie" = "Sao Paulo", 
+                              "Manaus" = "Manaus", 
+                              "Piauí" = "Piaui",
+                              "Rio_Grande_do_Sul"  = "Rio Grande do Sul",
+                              "Santa_Catarina"  = "Santa Catarina", 
+                              "São_Judas"  = "Sao Judas", 
+                              "Sergipe" = "Sergipe", 
+                              "Uberlândia" = "Uberlandia"))
+
+datatable(df, options = list(pageLength = 10, scrollX = TRUE)) %>% formatRound("IMC", 2)
+
+```
+
+## data visualization of TC6min Brazil {data-width=500, .tabset}
+
+### Distribution of walked distance by sex
+```{r}
+g1 <- ggplot(data = df, aes(x = Distancia, fill = Sexo)) +
+  geom_histogram(alpha = .5, position = "dodge", color = "black", bins = 40) +
+  labs(
+    title = "Distribution of distance values by sex (7-12 years)",
+    x = "Distance",
+    y = "Frequency",
+    fill = "Sex"
+  ) +
+  scale_fill_manual(values = c("black", "gold")) +
+  theme_minimal() +
+  theme(axis.title = element_text(face = "bold"))
+
+ggplotly(g1)
+```
+
+
+### By region
+
+```{r}
+g2 <- ggplot(data = df) +
+  geom_boxplot(aes(x = Centro, y = Distancia, fill = Centro)) +
+  labs(
+    title = "Distribution of distance values by center location (7-12 years)",
+    x = "Center",
+    y = "Distance (m)",
+    fill = "Center"
+  ) +
+  scale_fill_manual(
+    values = c("black", "orange", "grey", "beige", "blue", "brown", "purple", "red","gold",
+               "darkblue", "darkgreen"),
+    labels = c("Bahia" = "Bahia","Belo_Horizonte" = "Belo Horizonte", 
+               "Goiás" = "Goias", 
+              "Mackenzie" = "Sao Paulo", 
+              "Manaus" = "Manaus", 
+              "Piauí" = "Piaui",
+              "Rio_Grande_do_Sul"  = "Rio Grande do Sul",
+             "Santa_Catarina"  = "Santa Catarina", 
+            "São_Judas"  = "Sao Judas", 
+            "Sergipe" = "Sergipe", 
+            "Uberlândia" = "Uberlandia")
+      ) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        axis.title = element_text(face = "bold"),
+        axis.text.x = element_blank())
+
+ggplotly(g2)
+```
+
+# Meta-analysis
+
+
+-----------------------------------------------------------------------
+
+## Datasets for meta-analysis {data-width=400, .tabset}
+
+### By Region
+```{r}
+df1 <- df %>% group_by(Region = Regiao) %>% 
+  summarise(mean = mean(Distancia), sd = sd(Distancia), n = n()) %>% 
+  arrange(desc(mean))
+
+datatable(df1) %>% formatRound(c("mean", "sd"), 2)
+```
+
+### By Age
+```{r}
+df3 <- df %>% group_by(Age = Idade) %>% 
+  summarise(mean = mean(Distancia), sd = sd(Distancia), n = n()) %>% 
+  arrange(desc(Age))
+
+datatable(df3) %>% formatRound(c("mean", "sd"), 2)
+```
+
+
+## Forest plots {data-width=450, .tabset}
+
+### Forest Plot by Region
+```{r}
+meta <- metamean(data = df1, n = n, mean = mean, sd = sd, studlab = Region)
+
+forest(meta, layout = "JAMA", xlim = c(400,600),plotwidth = "6cm")
+```
+
+### Forest plot by Age
+
+```{r}
+meta2 <- metamean(data = df3, n = n, mean = mean, sd = sd, studlab = Age)
+
+forest(meta2, layout = "JAMA", xlim = c(400,600),plotwidth = "6cm")
+```
+
