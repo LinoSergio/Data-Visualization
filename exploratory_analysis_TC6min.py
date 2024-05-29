@@ -64,3 +64,17 @@ corr = df[['Distancia', 'Altura','IMC', 'Peso', 'Delta', 'FC_Final']].corr()
 
 sns.heatmap(data=corr, cmap='Blues', annot= True)
 plt.title('Gráfico de correlação entre varáveis do TC6min', weight='bold')
+
+# Plotnine Grammar of graphics
+
+from plotnine import *
+
+(
+ggplot(df, aes(x='Distancia', y='Delta', color = 'Sexo'))
++ geom_point()
++ geom_smooth()
++ theme_bw()
++ labs(title='Distancia Percorrida vs. Variação da Frequência Cardíaca por Sexo',
+       x = 'Distancia (m)',
+       y = 'Variação da Frequencia cardíaca (bpm)')
+)
