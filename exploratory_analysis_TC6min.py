@@ -1,31 +1,24 @@
 import pandas as pd
 import numpy as np
-
-df = pd.read_excel("TC6min.xlsx")
-df.head(10)
-
-# Summary description of the dataset
-
-df.info()
-df.describe()
-
-# Summary statistics using Profile report
-
-from ydata_profiling import ProfileReport
-
-ProfileReport(df, title = 'TC6min Profle Report')
-
-# Data Visualization
-
+from plotnine import *
 import seaborn as sns
 import matplotlib.pyplot as plt
+
+# Loading the data frame
+
+df = pd.read_excel('TC6_df.xlsx')
+df.head()
+df.info()
+
+# Data visualization with Seaborn
 
 sns.kdeplot(data=df, x='Distancia', hue='Sexo', fill=True, alpha=.5)
 plt.title('Densidade da distância percorrida por sexo')
 plt.ylabel('Densidade')
 plt.xlabel('Distância (m)')
 
-ax = sns.barplot(df, x='Regiao', y='Distancia', ci=False, palette= "GnBu")
+sns.barplot(df, x='Regiao', y='Distancia', ci=False, palette= "GnBu")
+plt.title('Distancia percorrida por região brasileira')
 
 sns.scatterplot(x = 'Distancia', y = 'Delta', hue = 'Sexo', data = df)
 plt.title('Distância percorrida vs. Freqência Cardíaca Final')
@@ -65,9 +58,8 @@ corr = df[['Distancia', 'Altura','IMC', 'Peso', 'Delta', 'FC_Final']].corr()
 sns.heatmap(data=corr, cmap='Blues', annot= True)
 plt.title('Gráfico de correlação entre varáveis do TC6min', weight='bold')
 
-# Plotnine Grammar of graphics
 
-from plotnine import *
+# Data Visualzation with Plotnine
 
 (
 ggplot(df, aes(x='Distancia', y='Delta', color = 'Sexo'))
@@ -77,4 +69,25 @@ ggplot(df, aes(x='Distancia', y='Delta', color = 'Sexo'))
 + labs(title='Distancia Percorrida vs. Variação da Frequência Cardíaca por Sexo',
        x = 'Distancia (m)',
        y = 'Variação da Frequencia cardíaca (bpm)')
+)
+
+(
+ggplot(df, aes(x='Regiao', y='Distancia', fill = 'Regiao'))
++ geom_boxplot()
++ theme_bw()
++ scale_fill_brewer(palette='Greys')
++ labs(title='Distancia Percorrida por região brasileira',
+       x = 'Região brasileira',
+       y = 'Distância percorrida')
+)
+
+(
+ggplot(df, aes(x='Regiao', y='Distancia', fill = 'Regiao'))
++ geom_violin(alpha = .3)
++ geom_point()
++ theme_bw()
++ scale_fill_brewer(palette='Greys')
++ labs(title='Distancia Percorrida por região brasileira',
+       x = 'Região brasileira',
+       y = 'Distância percorrida')
 )
