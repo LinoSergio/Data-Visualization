@@ -91,3 +91,14 @@ ggplot(df, aes(x='Regiao', y='Distancia', fill = 'Regiao'))
        x = 'Região brasileira',
        y = 'Distância percorrida')
 )
+
+(
+ggplot(df, aes(x='Delta', y= 'Centro', fill = 'Centro'))
++ geom_line()
++ geom_point()
++ theme_bw()
++ scale_fill_brewer(palette='GnBu')
++ labs(title='Distancia Percorrida por região Centro',
+       x = 'Região brasileira',
+       y = 'Distância percorrida')
+)
